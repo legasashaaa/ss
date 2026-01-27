@@ -1,20 +1,27 @@
 import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils import executor
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
 API_TOKEN = '8311250772:AAFM2QjFssNg9afqZIB0e0VxL5wSCaSgrws'
-ADMIN_ID = 8524326478  # Замените на ваш ID админа
+ADMIN_ID = 8524326478
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-# Инициализация бота и диспетчера
+# Инициализация бота, диспетчера и хранилища состояний
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
-# Создание клавиатуры
+# Хранилище для лайков пользователей
+user_likes = {}
+
+# Создание главной клавиатуры
 def get_main_keyboard():
     keyboard = ReplyKeyboardMarkup(
         resize_keyboard=True,
@@ -32,6 +39,43 @@ def get_main_keyboard():
     ]
     
     keyboard.add(*buttons)
+    return keyboard
+
+# Клавиатура для "Выберите категорию"
+def get_categories_keyboard():
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        InlineKeyboardButton("🔥Фишинг Ссылка🔥", callback_data="category_phishing")
+    )
+    return keyboard
+
+# Клавиатура для категории Фишинг Ссылка
+def get_phishing_category_keyboard(user_id):
+    heart_state = "❤️" if user_likes.get(user_id) == "liked" else "🤍"
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        InlineKeyboardButton("25.01.26 обновление 🎉 Фишинг Ссыл...", callback_data="phishing_update")
+    )
+    keyboard.add(
+        InlineKeyboardButton(heart_state, callback_data="toggle_like"),
+        InlineKeyboardButton("🔙 Назад", callback_data="back_to_categories")
+    )
+    return keyboard
+
+# Клавиатура для товара обновление
+def get_phishing_update_keyboard(user_id):
+    heart_state = "❤️" if user_likes.get(user_id) == "liked" else "🤍"
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.row(
+        InlineKeyboardButton("🔥 Фишинг | 150 ₽", callback_data="buy_phishing")
+    )
+    keyboard.row(
+        InlineKeyboardButton(heart_state, callback_data="toggle_like"),
+        InlineKeyboardButton("🔙 Назад", callback_data="back_to_phishing_category")
+    )
+    keyboard.add(
+        InlineKeyboardButton("🔙 Назад ко всем категориям", callback_data="back_to_categories")
+    )
     return keyboard
 
 # Обработчик команды /start
@@ -66,16 +110,109 @@ async def send_welcome(message: types.Message):
 @dp.message_handler(lambda message: message.text == "🎣 Все категории")
 async def all_categories(message: types.Message):
     await message.answer(
-        "📁 <b>Категории товаров:</b>\n\n"
-        "🎣 Фишинг-ссылки\n"
-        "🔑 Логины/пароли\n"
-        "📧 Email шаблоны\n"
-        "🌐 Веб-страницы\n"
-        "📱 Мобильные версии\n"
-        "💳 Банковские шаблоны\n\n"
-        "Выберите нужную категорию для просмотра товаров.",
-        parse_mode='HTML'
+        "📃 Категория: 🔥Фишинг Ссылка🔥\n"
+        "📃 Описание:",
+        reply_markup=get_categories_keyboard()
     )
+
+# Обработчик нажатия на категорию Фишинг Ссылка
+@dp.callback_query_handler(lambda c: c.data == 'category_phishing')
+async def process_phishing_category(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    
+    # Редактируем сообщение
+    await bot.edit_message_text(
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+        text="📃 Категория: 🔥Фишинг Ссылка🔥\n"
+             "📃 Описание:",
+        reply_markup=get_phishing_category_keyboard(user_id)
+    )
+    await callback_query.answer()
+
+# Обработчик нажатия на обновление
+@dp.callback_query_handler(lambda c: c.data == 'phishing_update')
+async def process_phishing_update(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    
+    text = (
+        "📃 Категория: 25.01.26 обновление🔥 Фишинг Ссылка🔥\n"
+        "📃 Описание: ⭐Моментальный взлом жир Аккаунтов ⭐\n\n"
+        "Для оплаты T Bank 2200702042193321\n\n"
+        "В сообщениях перевода прописать свой ИД ТГ\n"
+        "После оплаты Бот Автоматически выдаст ссылку..."
+    )
+    
+    # Редактируем сообщение
+    await bot.edit_message_text(
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+        text=text,
+        reply_markup=get_phishing_update_keyboard(user_id)
+    )
+    await callback_query.answer()
+
+# Обработчик переключения лайка
+@dp.callback_query_handler(lambda c: c.data == 'toggle_like')
+async def process_toggle_like(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    
+    # Переключаем состояние лайка
+    if user_likes.get(user_id) == "liked":
+        user_likes[user_id] = "unliked"
+    else:
+        user_likes[user_id] = "liked"
+    
+    # Определяем, на каком экране находится пользователь
+    message_text = callback_query.message.text
+    
+    if "25.01.26 обновление" in message_text:
+        # На экране товара
+        await bot.edit_message_reply_markup(
+            chat_id=callback_query.message.chat.id,
+            message_id=callback_query.message.message_id,
+            reply_markup=get_phishing_update_keyboard(user_id)
+        )
+    else:
+        # На экране категории
+        await bot.edit_message_reply_markup(
+            chat_id=callback_query.message.chat.id,
+            message_id=callback_query.message.message_id,
+            reply_markup=get_phishing_category_keyboard(user_id)
+        )
+    
+    await callback_query.answer("❤️" if user_likes.get(user_id) == "liked" else "🤍")
+
+# Обработчик возврата к категориям
+@dp.callback_query_handler(lambda c: c.data == 'back_to_categories')
+async def process_back_to_categories(callback_query: types.CallbackQuery):
+    await bot.edit_message_text(
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+        text="📃 Категория: 🔥Фишинг Ссылка🔥\n"
+             "📃 Описание:",
+        reply_markup=get_categories_keyboard()
+    )
+    await callback_query.answer()
+
+# Обработчик возврата к категории фишинга
+@dp.callback_query_handler(lambda c: c.data == 'back_to_phishing_category')
+async def process_back_to_phishing_category(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    
+    await bot.edit_message_text(
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+        text="📃 Категория: 🔥Фишинг Ссылка🔥\n"
+             "📃 Описание:",
+        reply_markup=get_phishing_category_keyboard(user_id)
+    )
+    await callback_query.answer()
+
+# Обработчик покупки фишинга
+@dp.callback_query_handler(lambda c: c.data == 'buy_phishing')
+async def process_buy_phishing(callback_query: types.CallbackQuery):
+    await callback_query.answer("Товар добавлен в корзину! Для покупки пишите в ЛС.")
 
 # Обработчик кнопки "Наличие товара"
 @dp.message_handler(lambda message: message.text == "📦 Наличие товара")
