@@ -4,8 +4,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import executor
 
 # Настройки бота
-API_TOKEN = 'YOUR_BOT_TOKEN_HERE'
-ADMIN_ID = 123456789  # Замените на ваш ID админа
+API_TOKEN = '8311250772:AAFM2QjFssNg9afqZIB0e0VxL5wSCaSgrws'
+ADMIN_ID = 8524326478  # Замените на ваш ID админа
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
