@@ -1,3 +1,5 @@
+
+
 import logging
 import aiohttp
 from aiogram import Bot, Dispatcher, types
@@ -50,16 +52,7 @@ async def create_crypto_invoice(amount_rub):
 
 def get_main_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    # Обновленные кнопки с эмодзи по скриншоту
-    keyboard.add(
-        KeyboardButton("📖 Все категории 📖"),
-        KeyboardButton("📄 Наличие\nтоваров 📄"), # Сделал попытку максимально приблизить к скриншоту с двумя эмодзи и переносом строки
-        KeyboardButton("💡 О магазине"),
-        KeyboardButton("👤 Профиль"),
-        KeyboardButton("📜 Правила 📜"),
-        KeyboardButton("❤️ Помощь"),
-        KeyboardButton("🔰 О сервисе")
-    )
+    keyboard.add("🎣 Все категории", "📦 Наличие товара", "🏪 О магазине", "👤 Профиль", "📜 Правила", "🆘 Помощь", "⚙️ сервис")
     return keyboard
 
 def get_categories_keyboard():
@@ -115,8 +108,7 @@ async def delete_and_send(chat_id, message_id, text, markup):
     """Удаляет старое сообщение и шлет новое"""
     try:
         await bot.delete_message(chat_id, message_id)
-    except Exception: # Ловим любое исключение при удалении, чтобы не прерывать работу
-        logging.warning(f"Не удалось удалить сообщение {message_id} в чате {chat_id}. Возможно, оно уже удалено или не существует.")
+    except:
         pass
     return await bot.send_message(chat_id, text, reply_markup=markup, parse_mode='HTML')
 
@@ -127,7 +119,7 @@ async def cmd_start(message: types.Message):
     await message.answer("🌟")
     await message.answer("👋 Добро пожаловать!\nИспользуйте кнопки ниже:", reply_markup=get_main_keyboard())
 
-@dp.message_handler(lambda m: m.text == "📖 Все категории 📖") # Обновлено
+@dp.message_handler(lambda m: m.text == "🎣 Все категории")
 async def all_cats(message: types.Message):
     await message.answer("Выберите категорию:", reply_markup=get_categories_keyboard())
 
@@ -218,15 +210,15 @@ async def process_toggle_like(callback_query: types.CallbackQuery):
     user_likes[user_id] = "unliked" if user_likes.get(user_id) == "liked" else "liked"
     await callback_query.answer("Изменено")
     
-    # Обновляем экран в зависимости от текста текущего сообщения
+    # Обновляем экран в зависимости от текста
     msg_text = callback_query.message.text
     if "Выберите количество" in msg_text:
         qty = user_cart.get(user_id, 1)
         text = f"📃 <b>Товар:</b> Фишинг\n💰 <b>Цена:</b> {ITEM_PRICE * qty} ₽\n📃 <b>Описание:</b>\n\nВыберите количество товара, которое хотите купить:"
         await delete_and_send(callback_query.message.chat.id, callback_query.message.message_id, text, get_buy_menu_keyboard(user_id))
-    elif "обновление" in msg_text: # Проверка на текст "25.01.26 обновление..."
+    elif "обновление" in msg_text:
         await delete_and_send(callback_query.message.chat.id, callback_query.message.message_id, msg_text, get_phishing_update_keyboard(user_id))
-    else: # Если ни то, ни другое, то это категория "Фишинг Ссылка"
+    else:
         text = "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥\n📃 <b>Описание:</b>\n"
         await delete_and_send(callback_query.message.chat.id, callback_query.message.message_id, text, get_phishing_category_keyboard(user_id))
 
@@ -235,17 +227,8 @@ async def back_to_cats(callback_query: types.CallbackQuery):
     await delete_and_send(callback_query.message.chat.id, callback_query.message.message_id, "Выберите категорию:", get_categories_keyboard())
     await callback_query.answer()
 
-# Остальные кнопки главного меню (обновлены названия)
-# Обновленный список текстов кнопок для этого хендлера
-OTHER_MAIN_MENU_BUTTONS = [
-    "📄 Наличие\nтоваров 📄",
-    "💡 О магазине",
-    "👤 Профиль",
-    "📜 Правила 📜",
-    "❤️ Помощь",
-    "🔰 О сервисе"
-]
-@dp.message_handler(lambda m: m.text in OTHER_MAIN_MENU_BUTTONS)
+# Остальные кнопки главного меню
+@dp.message_handler(lambda m: m.text in ["📦 Наличие товара", "🏪 О магазине", "👤 Профиль", "📜 Правила", "🆘 Помощь", "⚙️ сервис"])
 async def handle_others(message: types.Message):
     await message.answer(f"Раздел {message.text} находится в разработке.")
 
