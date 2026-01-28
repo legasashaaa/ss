@@ -56,9 +56,9 @@ def get_phishing_category_keyboard(user_id):
     keyboard.add(
         InlineKeyboardButton("25.01.26 обновление🔥 Фишинг Ссылка", callback_data="phishing_update")
     )
-    keyboard.add(
+    keyboard.row(
         InlineKeyboardButton(heart_state, callback_data="toggle_like"),
-        InlineKeyboardButton("Назад", callback_data="back_to_categories")
+        InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
     return keyboard
 
@@ -66,16 +66,23 @@ def get_phishing_category_keyboard(user_id):
 def get_phishing_update_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup(row_width=1)
+    
+    # Первая кнопка по середине
     keyboard.add(
-        InlineKeyboardButton("Фишинг | 150 ₽ | ∞", callback_data="buy_phishing")
+        InlineKeyboardButton("Фишинг | 500 ₽ | ∞", callback_data="buy_phishing")
     )
+    
+    # Вторая и третья кнопки слева и справа снизу
     keyboard.row(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like"),
-        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category")
+        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category"),
+        InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
+    
+    # Четвертая кнопка по середине
     keyboard.add(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
+    
     return keyboard
 
 # Функция для удаления предыдущего сообщения и отправки нового
@@ -136,8 +143,9 @@ async def process_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
     text = (
-        "<b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
-        "<b>Описание:</b> 05:10"
+        "📃 <b>Категория:</b> Фишинг Ссылка\n"
+        "📃 <b>Описание:</b> 05:10\n\n"
+        "25.01.26 обновление Фишинг Ссылка..."
     )
     
     await delete_and_send_new(
@@ -153,12 +161,14 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
     text = (
-        "25.01.26 обновление Фишинг Ссылка\n\n"
-        "<b>Категория:</b> Фишинг Ссылка\n"
-        "<b>Описание:</b> ★Моментальный взлом жир Аккаунтов ★\n\n"
+        "<b>Категория:</b> 25.01.26 обновление\n"
+        "Фишинг Ссылка 🔥🔥\n"
+        "<b>Описание:</b> ★ Моментальный\n\n"
+        "взлом жир Аккаунтов 🎁⭐️\n\n"
         "Для оплаты T Bank\n"
         "2200702042193321 В сообщениях перевода прописать свой ИД ТГ\n"
-        "После оплаты Бот Автоматически выдаст ссылку..."
+        "После оплаты Бот Автоматически выдаст ссылку...\n\n"
+        "05:28"
     )
     
     await delete_and_send_new(
@@ -182,14 +192,14 @@ async def process_toggle_like(callback_query: types.CallbackQuery):
     # Определяем, на каком экране находится пользователь
     message_text = callback_query.message.text
     
-    if "25.01.26 обновление Фишинг Ссылка" in message_text:
+    if "Категория: 25.01.26 обновление" in message_text and "Фишинг Ссылка 🔥🔥" in message_text:
         # На экране товара
         await delete_and_send_new(
             callback_query,
             message_text,
             get_phishing_update_keyboard(user_id)
         )
-    elif "Категория: 🔥Фишинг Ссылка🔥" in message_text:
+    elif "📃 <b>Категория:</b> Фишинг Ссылка" in message_text and "25.01.26 обновление Фишинг Ссылка..." in message_text:
         # На экране категории
         await delete_and_send_new(
             callback_query,
@@ -217,8 +227,9 @@ async def process_back_to_phishing_category(callback_query: types.CallbackQuery)
     user_id = callback_query.from_user.id
     
     text = (
-        "<b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
-        "<b>Описание:</b> 05:10"
+        "📃 <b>Категория:</b> Фишинг Ссылка\n"
+        "📃 <b>Описание:</b> 05:10\n\n"
+        "25.01.26 обновление Фишинг Ссылка..."
     )
     
     await delete_and_send_new(
@@ -329,9 +340,11 @@ async def service_info(message: types.Message):
 # Обработчик остальных сообщений
 @dp.message_handler()
 async def echo_message(message: types.Message):
+    error_text = "К сожалению я не смог распознать Вашу команду. Воспользуйтесь кнопками в меню или отправьте /start"
+    
     await delete_and_send_new(
         message,
-        "Я не понимаю ваш запрос. Используйте кнопки ниже для навигации 👇",
+        error_text,
         get_main_keyboard()
     )
 
