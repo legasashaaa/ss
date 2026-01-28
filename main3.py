@@ -18,7 +18,7 @@ bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-# Хранилище для лайков пользователей
+# Хранилище для лайков пользователей (раздельное для категорий и товаров)
 user_likes = {}
 
 # Создание главной клавиатуры
@@ -51,7 +51,10 @@ def get_categories_keyboard():
 
 # Клавиатура для категории Фишинг Ссылка
 def get_phishing_category_keyboard(user_id):
-    heart_state = "💚" if user_likes.get(user_id) == "liked_category" else "🤍"
+    # Проверяем состояние лайка для категории
+    is_liked = user_likes.get(f"{user_id}_category") == "liked_category"
+    heart_state = "💚" if is_liked else "🤍"
+    
     keyboard = InlineKeyboardMarkup(row_width=3)
     
     # 1. Первая кнопка (занимает всю ширину)
@@ -75,7 +78,10 @@ def get_phishing_category_keyboard(user_id):
 
 # Клавиатура для товара обновление
 def get_phishing_update_keyboard(user_id):
-    heart_state = "💚" if user_likes.get(user_id) == "liked_update" else "🤍"
+    # Проверяем состояние лайка для товара
+    is_liked = user_likes.get(f"{user_id}_update") == "liked_update"
+    heart_state = "💚" if is_liked else "🤍"
+    
     keyboard = InlineKeyboardMarkup(row_width=3)
     
     # 1. Кнопка "Фишинг | 150 ₽ | ∞" по центру (занимает всю ширину)
@@ -97,25 +103,23 @@ def get_phishing_update_keyboard(user_id):
     
     return keyboard
 
-# Функция для редактирования сообщения вместо удаления
-async def edit_or_send_new(message_or_callback, text, reply_markup=None, parse_mode='HTML'):
+# Функция для удаления и отправки нового сообщения (решает проблему с расположением кнопок)
+async def delete_and_send_new(message_or_callback, text, reply_markup=None, parse_mode='HTML'):
     if isinstance(message_or_callback, types.CallbackQuery):
+        chat_id = message_or_callback.message.chat.id
+        message_id = message_or_callback.message.message_id
+        
         try:
-            await message_or_callback.message.edit_text(
-                text, 
-                reply_markup=reply_markup, 
-                parse_mode=parse_mode
-            )
+            # Удаляем старое сообщение
+            await bot.delete_message(chat_id, message_id)
         except Exception as e:
-            # Если не удалось отредактировать, удаляем и отправляем новое
-            chat_id = message_or_callback.message.chat.id
-            message_id = message_or_callback.message.message_id
-            try:
-                await bot.delete_message(chat_id, message_id)
-            except:
-                pass
-            await bot.send_message(chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
+            logging.error(f"Ошибка удаления сообщения: {e}")
+        
+        # Отправляем новое сообщение
+        await bot.send_message(chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
+        await message_or_callback.answer()
     else:
+        # Для обычных сообщений
         chat_id = message_or_callback.chat.id
         await message_or_callback.answer(text, reply_markup=reply_markup, parse_mode=parse_mode)
 
@@ -164,12 +168,11 @@ async def process_phishing_category(callback_query: types.CallbackQuery):
         "📃 <b>Описание:</b>\n"
     )
     
-    await edit_or_send_new(
+    await delete_and_send_new(
         callback_query,
         text,
         get_phishing_category_keyboard(user_id)
     )
-    await callback_query.answer()
 
 # Обработчик нажатия на обновление
 @dp.callback_query_handler(lambda c: c.data == 'phishing_update')
@@ -183,12 +186,11 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
         "После оплаты Бот Автоматически выдаст ссылку..."
     )
     
-    await edit_or_send_new(
+    await delete_and_send_new(
         callback_query,
         text,
         get_phishing_update_keyboard(user_id)
     )
-    await callback_query.answer()
 
 # Обработчик пустой кнопки (для выравнивания)
 @dp.callback_query_handler(lambda c: c.data == 'empty')
@@ -199,16 +201,17 @@ async def process_empty_button(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data == 'toggle_like_category')
 async def process_toggle_like_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
+    key = f"{user_id}_category"
     
     # Определяем текущее состояние и показываем соответствующее уведомление
-    current_state = user_likes.get(user_id)
+    current_state = user_likes.get(key)
     if current_state == "liked_category":
         # Удаляем из избранного
-        user_likes[user_id] = None
+        user_likes[key] = None
         notification_text = "Категория удалена из избранного"
     else:
         # Добавляем в избранное
-        user_likes[user_id] = "liked_category"
+        user_likes[key] = "liked_category"
         notification_text = "Категория добавлена в избранное"
     
     # Показываем уведомление вверху экрана
@@ -220,7 +223,7 @@ async def process_toggle_like_category(callback_query: types.CallbackQuery):
         "📃 <b>Описание:</b>\n"
     )
     
-    await edit_or_send_new(
+    await delete_and_send_new(
         callback_query,
         text,
         get_phishing_category_keyboard(user_id)
@@ -230,16 +233,17 @@ async def process_toggle_like_category(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data == 'toggle_like_update')
 async def process_toggle_like_update(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
+    key = f"{user_id}_update"
     
     # Определяем текущее состояние и показываем соответствующее уведомление
-    current_state = user_likes.get(user_id)
+    current_state = user_likes.get(key)
     if current_state == "liked_update":
         # Удаляем из избранного
-        user_likes[user_id] = None
+        user_likes[key] = None
         notification_text = "Товар удалён из избранного"
     else:
         # Добавляем в избранное
-        user_likes[user_id] = "liked_update"
+        user_likes[key] = "liked_update"
         notification_text = "Товар добавлен в избранное"
     
     # Показываем уведомление вверху экрана
@@ -253,7 +257,7 @@ async def process_toggle_like_update(callback_query: types.CallbackQuery):
         "После оплаты Бот Автоматически выдаст ссылку..."
     )
     
-    await edit_or_send_new(
+    await delete_and_send_new(
         callback_query,
         text,
         get_phishing_update_keyboard(user_id)
@@ -267,7 +271,7 @@ async def process_back_to_categories(callback_query: types.CallbackQuery):
     # Показываем уведомление "Загрузка…"
     await callback_query.answer("Загрузка…")
     
-    await edit_or_send_new(
+    await delete_and_send_new(
         callback_query,
         text,
         get_categories_keyboard()
@@ -283,12 +287,11 @@ async def process_back_to_phishing_category(callback_query: types.CallbackQuery)
         "📃 <b>Описание:</b>\n"
     )
     
-    await edit_or_send_new(
+    await delete_and_send_new(
         callback_query,
         text,
         get_phishing_category_keyboard(user_id)
     )
-    await callback_query.answer()
 
 # Обработчик покупки фишинга
 @dp.callback_query_handler(lambda c: c.data == 'buy_phishing')
