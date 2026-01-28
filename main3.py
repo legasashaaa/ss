@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
-API_TOKEN = '8311250772:AAEUYiCb-PhFGVN9TnZWRwC35LQirRoiNYo'
+API_TOKEN = '8311250772:AAHe2EDytZPgl1iSYk5zmkgW-gBz_0o1NtA'
 ADMIN_ID = 8524326478
 
 # Настройка логирования
@@ -53,13 +53,18 @@ def get_categories_keyboard():
 def get_phishing_category_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup(row_width=1)
+    
+    # Кнопки расположены вертикально как на втором скрине
     keyboard.add(
         InlineKeyboardButton("25.01.26 обновление🔥 Фишинг Ссылка", callback_data="phishing_update")
     )
-    keyboard.row(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like"),
+    keyboard.add(
+        InlineKeyboardButton(heart_state, callback_data="toggle_like")
+    )
+    keyboard.add(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
+    
     return keyboard
 
 # Клавиатура для товара обновление
@@ -67,18 +72,16 @@ def get_phishing_update_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup(row_width=1)
     
-    # Первая кнопка по середине
+    # Кнопки расположены вертикально
     keyboard.add(
         InlineKeyboardButton("Фишинг | 500 ₽ | ∞", callback_data="buy_phishing")
     )
-    
-    # Вторая и третья кнопки слева и справа снизу
-    keyboard.row(
-        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category"),
+    keyboard.add(
+        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category")
+    )
+    keyboard.add(
         InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
-    
-    # Четвертая кнопка по середине
     keyboard.add(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
@@ -143,10 +146,10 @@ async def all_categories(message: types.Message):
 async def process_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
+    # Обновленный текст (убрано описание)
     text = (
         "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
-        "📃 <b>Описание:</b>\n\n"
-        "25.01.26 обновление🔥 Фишинг Ссылка"
+        "📃 <b>Описание:</b>\n"
     )
     
     await delete_and_send_new(
@@ -180,11 +183,18 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
 async def process_toggle_like(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    # Переключаем состояние лайка
+    # Определяем текущее состояние и показываем соответствующее уведомление
     if user_likes.get(user_id) == "liked":
+        # Удаляем из избранного
         user_likes[user_id] = "unliked"
+        notification_text = "Товар удалён из избранного"
     else:
+        # Добавляем в избранное
         user_likes[user_id] = "liked"
+        notification_text = "Товар добавлен в избранное"
+    
+    # Показываем уведомление вверху экрана
+    await callback_query.answer(notification_text)
     
     # Определяем, на каком экране находится пользователь
     message_text = callback_query.message.text
@@ -203,30 +213,30 @@ async def process_toggle_like(callback_query: types.CallbackQuery):
             message_text,
             get_phishing_category_keyboard(user_id)
         )
-    
-    await callback_query.answer("💚" if user_likes.get(user_id) == "liked" else "🤍")
 
 # Обработчик возврата к категориям
 @dp.callback_query_handler(lambda c: c.data == 'back_to_categories')
 async def process_back_to_categories(callback_query: types.CallbackQuery):
     text = "Выберите категорию:"
     
+    # Показываем уведомление "Загрузка…"
+    await callback_query.answer("Загрузка…")
+    
     await delete_and_send_new(
         callback_query,
         text,
         get_categories_keyboard()
     )
-    await callback_query.answer()
 
 # Обработчик возврата к категории фишинга
 @dp.callback_query_handler(lambda c: c.data == 'back_to_phishing_category')
 async def process_back_to_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
+    # Обновленный текст (убрано описание)
     text = (
         "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
-        "📃 <b>Описание:</b>\n\n"
-        "25.01.26 обновление🔥 Фишинг Ссылка"
+        "📃 <b>Описание:</b>\n"
     )
     
     await delete_and_send_new(
