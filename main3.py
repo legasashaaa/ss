@@ -49,38 +49,48 @@ def get_categories_keyboard():
     )
     return keyboard
 
-# Клавиатура для категории Фишинг Ссылка
+# Клавиатура для категории Фишинг Ссылка (как на втором скрине)
 def get_phishing_category_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard = InlineKeyboardMarkup()
+    
+    # Первая строка: одна кнопка
     keyboard.add(
-        InlineKeyboardButton("25.01.26 обновление 🎉 Фишинг Ссыл...", callback_data="phishing_update")
+        InlineKeyboardButton("25.01.26 обновление 🎉 Фишинг Ссылка", callback_data="phishing_update")
     )
-    keyboard.add(
+    
+    # Вторая строка: две кнопки (лайк и Назад)
+    keyboard.row(
         InlineKeyboardButton(heart_state, callback_data="toggle_like"),
         InlineKeyboardButton("Назад", callback_data="back_to_categories")
     )
+    
+    # Третья строка: одна кнопка (центрированная)
+    keyboard.add(
+        InlineKeyboardButton("📌 Назад ко всем категориям", callback_data="back_to_categories")
+    )
+    
     return keyboard
 
-# Клавиатура для товара обновление - ИЗМЕНЕН ПРИМЕР КАК НА ВТОРОМ СКРИНЕ
+# Клавиатура для товара обновление (как на втором скрине)
 def get_phishing_update_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup()
     
-    # 1. Кнопка "Фишинг | 150 ₽ | ∞" (первая строка)
-    keyboard.row(
+    # Первая строка: одна кнопка
+    keyboard.add(
         InlineKeyboardButton("Фишинг | 150 ₽ | ∞", callback_data="buy_phishing")
     )
     
-    # 2. Вторая строка: лайк и "Назад" рядом
+    # Вторая строка: две кнопки
     keyboard.row(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like"),
-        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category")
+        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category"),
+        InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
     
-    # 3. Третья строка: "Назад ко всем категориям" отдельно
-    keyboard.row(
-        InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
+    # Третья строка: одна кнопка
+    keyboard.add(
+        InlineKeyboardButton("📌 Назад ко всем категориям", callback_data="back_to_categories")
     )
     
     return keyboard
@@ -141,15 +151,15 @@ async def process_phishing_category(callback_query: types.CallbackQuery):
     )
     await callback_query.answer()
 
-# Обработчик нажатия на обновление
+# Обработчик нажатия на обновление (как на втором скрине)
 @dp.callback_query_handler(lambda c: c.data == 'phishing_update')
 async def process_phishing_update(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
     text = (
         "Категория: 25.01.26 обновление\n"
-        "Фишинг Ссылка 🔥\n"
-        "Описание: ★ Моментальный взлом жир Аккаунтов ★\n\n"
+        "Фишинг Ссылка 🎉\n"  # Изменено с 🔥🔥 на 🎉
+        "Описание: ★ Моментальный взлом жир Аккаунтов ★\n\n"  # Добавлен пробел
         "Для оплаты T Bank\n"
         "2200702042193321 В сообщениях перевода прописать свой ИД ТГ\n"
         "После оплаты Бот Автоматически выдаст ссылку..."
