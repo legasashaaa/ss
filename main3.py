@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
-API_TOKEN = '8311250772:AAENT4-wv0BCCurNgkNjpw79cpQHORJNGr8'
+API_TOKEN = '8311250772:AAGwkOPMv3QkD5r1dJcvm7jpLtEJoNPFWmk'
 ADMIN_ID = 8524326478
 
 # Настройка логирования
