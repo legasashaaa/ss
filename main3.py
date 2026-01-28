@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
-API_TOKEN = '8311250772:AAHEPOG_iZrhZX1SMhDSVeFEdOnVBkhXOqE'
+API_TOKEN = '8311250772:AAENT4-wv0BCCurNgkNjpw79cpQHORJNGr8'
 ADMIN_ID = 8524326478
 
 # Настройка логирования
@@ -49,20 +49,26 @@ def get_categories_keyboard():
     )
     return keyboard
 
-# Клавиатура для категории Фишинг Ссылка (как на втором скрине)
+# Клавиатура для категории Фишинг Ссылка (правильное расположение кнопок)
 def get_phishing_category_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard = InlineKeyboardMarkup(row_width=3)
     
-    # Кнопки расположены вертикально как на втором скрине
+    # 1. Первая кнопка (занимает всю ширину)
     keyboard.add(
         InlineKeyboardButton("25.01.26 обновление🔥 Фишинг Ссылка", callback_data="phishing_update")
     )
+    
+    # 2. Вторая строка: Назад (слева), Сердечко (справа)
+    keyboard.row(
+        InlineKeyboardButton("Назад", callback_data="back_to_categories"),
+        InlineKeyboardButton("", callback_data="empty"),
+        InlineKeyboardButton(heart_state, callback_data="toggle_like")
+    )
+    
+    # 3. Кнопка "Назад ко всем категориям" по центру внизу
     keyboard.add(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
-    )
-    keyboard.add(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
     
     return keyboard
@@ -70,20 +76,23 @@ def get_phishing_category_keyboard(user_id):
 # Клавиатура для товара обновление (как на втором скрине)
 def get_phishing_update_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard = InlineKeyboardMarkup(row_width=3)
     
-    # Кнопки расположены вертикально как на втором скрине
+    # 1. Кнопка "Фишинг | 150 ₽ | ∞" по центру (занимает всю ширину)
     keyboard.add(
-        InlineKeyboardButton("Фишинг | 500 ₽ | ∞", callback_data="buy_phishing")
+        InlineKeyboardButton("Фишинг | 150 ₽ | ∞", callback_data="buy_phishing")
     )
-    keyboard.add(
-        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category")
+    
+    # 2. Вторая строка: Назад (слева), Сердечко (справа)
+    keyboard.row(
+        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category"),
+        InlineKeyboardButton("", callback_data="empty"),
+        InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
+    
+    # 3. Кнопка "Назад ко всем категориям" по центру внизу
     keyboard.add(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
-    )
-    keyboard.add(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
     
     return keyboard
@@ -178,6 +187,11 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
     )
     await callback_query.answer()
 
+# Обработчик пустой кнопки (для выравнивания)
+@dp.callback_query_handler(lambda c: c.data == 'empty')
+async def process_empty_button(callback_query: types.CallbackQuery):
+    await callback_query.answer()
+
 # Обработчик переключения лайка
 @dp.callback_query_handler(lambda c: c.data == 'toggle_like')
 async def process_toggle_like(callback_query: types.CallbackQuery):
@@ -193,7 +207,7 @@ async def process_toggle_like(callback_query: types.CallbackQuery):
         user_likes[user_id] = "liked"
         notification_text = "Товар добавлен в избранное"
     
-    # Показываем уведомление вверху экрана
+    # Показываем уведомление вверху экрана (БЕЗ "Загрузка…")
     await callback_query.answer(notification_text)
     
     # Определяем, на каком экране находится пользователь
@@ -219,7 +233,7 @@ async def process_toggle_like(callback_query: types.CallbackQuery):
 async def process_back_to_categories(callback_query: types.CallbackQuery):
     text = "Выберите категорию:"
     
-    # Показываем уведомление "Загрузка…"
+    # Показываем уведомление "Загрузка…" ТОЛЬКО здесь
     await callback_query.answer("Загрузка…")
     
     await delete_and_send_new(
