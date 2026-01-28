@@ -5,7 +5,7 @@ from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
-API_TOKEN = '8311250772:AAEG4WWfEFf3axJitF3xgPsVe7ozjMwwE2I'
+API_TOKEN = '8311250772:AAHwc5YPgngWyVFPdmSHL4wBRSb_ac13Gaw'
 ADMIN_ID = 8524326478
 
 # Настройка логирования
