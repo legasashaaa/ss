@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
-API_TOKEN = '8311250772:AAHe2EDytZPgl1iSYk5zmkgW-gBz_0o1NtA'
+API_TOKEN = '8311250772:AAHEPOG_iZrhZX1SMhDSVeFEdOnVBkhXOqE'
 ADMIN_ID = 8524326478
 
 # Настройка логирования
@@ -49,7 +49,7 @@ def get_categories_keyboard():
     )
     return keyboard
 
-# Клавиатура для категории Фишинг Ссылка
+# Клавиатура для категории Фишинг Ссылка (как на втором скрине)
 def get_phishing_category_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup(row_width=1)
@@ -59,20 +59,20 @@ def get_phishing_category_keyboard(user_id):
         InlineKeyboardButton("25.01.26 обновление🔥 Фишинг Ссылка", callback_data="phishing_update")
     )
     keyboard.add(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like")
+        InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
     keyboard.add(
-        InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
+        InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
     
     return keyboard
 
-# Клавиатура для товара обновление
+# Клавиатура для товара обновление (как на втором скрине)
 def get_phishing_update_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup(row_width=1)
     
-    # Кнопки расположены вертикально
+    # Кнопки расположены вертикально как на втором скрине
     keyboard.add(
         InlineKeyboardButton("Фишинг | 500 ₽ | ∞", callback_data="buy_phishing")
     )
@@ -80,10 +80,10 @@ def get_phishing_update_keyboard(user_id):
         InlineKeyboardButton("Назад", callback_data="back_to_phishing_category")
     )
     keyboard.add(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like")
+        InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
     keyboard.add(
-        InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
+        InlineKeyboardButton(heart_state, callback_data="toggle_like")
     )
     
     return keyboard
