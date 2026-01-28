@@ -49,50 +49,33 @@ def get_categories_keyboard():
     )
     return keyboard
 
-# Клавиатура для категории Фишинг Ссылка (как на втором скрине)
+# Клавиатура для категории Фишинг Ссылка
 def get_phishing_category_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup()
-    
-    # Первая строка: одна кнопка
+    keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        InlineKeyboardButton("25.01.26 обновление 🎉 Фишинг Ссылка", callback_data="phishing_update")
+        InlineKeyboardButton("25.01.26 обновление 🎉", callback_data="phishing_update")
     )
-    
-    # Вторая строка: две кнопки (лайк и Назад)
     keyboard.row(
         InlineKeyboardButton(heart_state, callback_data="toggle_like"),
         InlineKeyboardButton("Назад", callback_data="back_to_categories")
     )
-    
-    # Третья строка: одна кнопка (центрированная)
-    keyboard.add(
-        InlineKeyboardButton("📌 Назад ко всем категориям", callback_data="back_to_categories")
-    )
-    
     return keyboard
 
-# Клавиатура для товара обновление (как на втором скрине)
+# Клавиатура для товара обновление
 def get_phishing_update_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup()
-    
-    # Первая строка: одна кнопка
+    keyboard = InlineKeyboardMarkup(row_width=1)
     keyboard.add(
         InlineKeyboardButton("Фишинг | 150 ₽ | ∞", callback_data="buy_phishing")
     )
-    
-    # Вторая строка: две кнопки
     keyboard.row(
-        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category"),
-        InlineKeyboardButton(heart_state, callback_data="toggle_like")
+        InlineKeyboardButton(heart_state, callback_data="toggle_like"),
+        InlineKeyboardButton("Назад", callback_data="back_to_phishing_category")
     )
-    
-    # Третья строка: одна кнопка
     keyboard.add(
-        InlineKeyboardButton("📌 Назад ко всем категориям", callback_data="back_to_categories")
+        InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
-    
     return keyboard
 
 # Обработчик команды /start
@@ -126,10 +109,7 @@ async def send_welcome(message: types.Message):
 # Обработчик кнопки "Все категории"
 @dp.message_handler(lambda message: message.text == "🎣 Все категории")
 async def all_categories(message: types.Message):
-    text = (
-        "Категория: Фишинг Ссылка\n"
-        "Описание: 12:33"
-    )
+    text = "Выберите категорию:"
     
     await message.answer(
         text,
@@ -145,21 +125,20 @@ async def process_phishing_category(callback_query: types.CallbackQuery):
     await bot.edit_message_text(
         chat_id=callback_query.message.chat.id,
         message_id=callback_query.message.message_id,
-        text="Категория: Фишинг Ссылка\n"
-             "Описание: 12:33",
+        text="📃 Категория: 🔥Фишинг Ссылка🔥\n📃 Описание:",
         reply_markup=get_phishing_category_keyboard(user_id)
     )
     await callback_query.answer()
 
-# Обработчик нажатия на обновление (как на втором скрине)
+# Обработчик нажатия на обновление
 @dp.callback_query_handler(lambda c: c.data == 'phishing_update')
 async def process_phishing_update(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
     text = (
         "Категория: 25.01.26 обновление\n"
-        "Фишинг Ссылка 🎉\n"  # Изменено с 🔥🔥 на 🎉
-        "Описание: ★ Моментальный взлом жир Аккаунтов ★\n\n"  # Добавлен пробел
+        "Фишинг Ссылка 🎉\n"
+        "Описание: ★Моментальный взлом жир Аккаунтов ★\n\n"
         "Для оплаты T Bank\n"
         "2200702042193321 В сообщениях перевода прописать свой ИД ТГ\n"
         "После оплаты Бот Автоматически выдаст ссылку..."
@@ -211,8 +190,7 @@ async def process_back_to_categories(callback_query: types.CallbackQuery):
     await bot.edit_message_text(
         chat_id=callback_query.message.chat.id,
         message_id=callback_query.message.message_id,
-        text="Категория: Фишинг Ссылка\n"
-             "Описание: 12:33",
+        text="Выберите категорию:",
         reply_markup=get_categories_keyboard()
     )
     await callback_query.answer()
@@ -225,8 +203,7 @@ async def process_back_to_phishing_category(callback_query: types.CallbackQuery)
     await bot.edit_message_text(
         chat_id=callback_query.message.chat.id,
         message_id=callback_query.message.message_id,
-        text="Категория: Фишинг Ссылка\n"
-             "Описание: 12:33",
+        text="📃 Категория: 🔥Фишинг Ссылка🔥\n📃 Описание:",
         reply_markup=get_phishing_category_keyboard(user_id)
     )
     await callback_query.answer()
