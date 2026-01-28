@@ -1,5 +1,4 @@
 import logging
-import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils import executor
@@ -13,7 +12,6 @@ ADMIN_ID = 8524326478
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Инициализация бота, диспетчера и хранилища состояний
 bot = Bot(token=API_TOKEN)
@@ -316,33 +314,7 @@ async def echo_message(message: types.Message):
         reply_markup=get_main_keyboard()
     )
 
-# Асинхронная функция для запуска бота
-async def main():
-    logger.info("Бот FishingScamming запускается...")
-    
-    try:
-        # Очищаем вебхук (если был установлен)
-        await bot.delete_webhook(drop_pending_updates=True)
-        logger.info("Вебхук очищен, ожидаемые обновления удалены")
-        
-        # Даем время для очистки
-        await asyncio.sleep(1)
-        
-        # Запускаем поллинг
-        logger.info("Начинаю поллинг...")
-        await dp.start_polling()
-        
-    except Exception as e:
-        logger.error(f"Ошибка запуска бота: {e}")
-    finally:
-        logger.info("Бот остановлен")
-
 # Запуск бота
 if __name__ == '__main__':
-    # Для Render.com или других хостингов используем asyncio.run
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Бот остановлен пользователем")
-    except Exception as e:
-        logger.error(f"Критическая ошибка: {e}")
+    logging.info("Бот FishingScamming запущен!")
+    executor.start_polling(dp, skip_updates=True)
