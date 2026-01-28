@@ -52,11 +52,11 @@ def get_categories_keyboard():
 # Клавиатура для категории Фишинг Ссылка
 def get_phishing_category_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard = InlineKeyboardMarkup(row_width=1)
     keyboard.add(
-        InlineKeyboardButton("25.01.26 обновление 🎉", callback_data="phishing_update")
+        InlineKeyboardButton("25.01.26 обновление🔥 Фишинг Ссылка", callback_data="phishing_update")
     )
-    keyboard.row(
+    keyboard.add(
         InlineKeyboardButton(heart_state, callback_data="toggle_like"),
         InlineKeyboardButton("Назад", callback_data="back_to_categories")
     )
@@ -77,6 +77,20 @@ def get_phishing_update_keyboard(user_id):
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
     return keyboard
+
+# Функция для удаления предыдущего сообщения и отправки нового
+async def delete_and_send_new(message_or_callback, text, reply_markup=None, parse_mode='HTML'):
+    if isinstance(message_or_callback, types.CallbackQuery):
+        chat_id = message_or_callback.message.chat.id
+        message_id = message_or_callback.message.message_id
+        try:
+            await bot.delete_message(chat_id, message_id)
+        except Exception as e:
+            logging.error(f"Ошибка удаления сообщения: {e}")
+        await bot.send_message(chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
+    else:
+        chat_id = message_or_callback.chat.id
+        await message_or_callback.answer(text, reply_markup=reply_markup, parse_mode=parse_mode)
 
 # Обработчик команды /start
 @dp.message_handler(commands=['start'])
@@ -121,12 +135,15 @@ async def all_categories(message: types.Message):
 async def process_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    # Редактируем сообщение
-    await bot.edit_message_text(
-        chat_id=callback_query.message.chat.id,
-        message_id=callback_query.message.message_id,
-        text="📃 Категория: 🔥Фишинг Ссылка🔥\n📃 Описание:",
-        reply_markup=get_phishing_category_keyboard(user_id)
+    text = (
+        "<b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
+        "<b>Описание:</b> 05:10"
+    )
+    
+    await delete_and_send_new(
+        callback_query,
+        text,
+        get_phishing_category_keyboard(user_id)
     )
     await callback_query.answer()
 
@@ -136,20 +153,18 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
     text = (
-        "Категория: 25.01.26 обновление\n"
-        "Фишинг Ссылка 🎉\n"
-        "Описание: ★Моментальный взлом жир Аккаунтов ★\n\n"
+        "25.01.26 обновление Фишинг Ссылка\n\n"
+        "<b>Категория:</b> Фишинг Ссылка\n"
+        "<b>Описание:</b> ★Моментальный взлом жир Аккаунтов ★\n\n"
         "Для оплаты T Bank\n"
         "2200702042193321 В сообщениях перевода прописать свой ИД ТГ\n"
         "После оплаты Бот Автоматически выдаст ссылку..."
     )
     
-    # Редактируем сообщение
-    await bot.edit_message_text(
-        chat_id=callback_query.message.chat.id,
-        message_id=callback_query.message.message_id,
-        text=text,
-        reply_markup=get_phishing_update_keyboard(user_id)
+    await delete_and_send_new(
+        callback_query,
+        text,
+        get_phishing_update_keyboard(user_id)
     )
     await callback_query.answer()
 
@@ -167,19 +182,19 @@ async def process_toggle_like(callback_query: types.CallbackQuery):
     # Определяем, на каком экране находится пользователь
     message_text = callback_query.message.text
     
-    if "25.01.26 обновление" in message_text:
+    if "25.01.26 обновление Фишинг Ссылка" in message_text:
         # На экране товара
-        await bot.edit_message_reply_markup(
-            chat_id=callback_query.message.chat.id,
-            message_id=callback_query.message.message_id,
-            reply_markup=get_phishing_update_keyboard(user_id)
+        await delete_and_send_new(
+            callback_query,
+            message_text,
+            get_phishing_update_keyboard(user_id)
         )
-    else:
+    elif "Категория: 🔥Фишинг Ссылка🔥" in message_text:
         # На экране категории
-        await bot.edit_message_reply_markup(
-            chat_id=callback_query.message.chat.id,
-            message_id=callback_query.message.message_id,
-            reply_markup=get_phishing_category_keyboard(user_id)
+        await delete_and_send_new(
+            callback_query,
+            message_text,
+            get_phishing_category_keyboard(user_id)
         )
     
     await callback_query.answer("💚" if user_likes.get(user_id) == "liked" else "🤍")
@@ -187,11 +202,12 @@ async def process_toggle_like(callback_query: types.CallbackQuery):
 # Обработчик возврата к категориям
 @dp.callback_query_handler(lambda c: c.data == 'back_to_categories')
 async def process_back_to_categories(callback_query: types.CallbackQuery):
-    await bot.edit_message_text(
-        chat_id=callback_query.message.chat.id,
-        message_id=callback_query.message.message_id,
-        text="Выберите категорию:",
-        reply_markup=get_categories_keyboard()
+    text = "Выберите категорию:"
+    
+    await delete_and_send_new(
+        callback_query,
+        text,
+        get_categories_keyboard()
     )
     await callback_query.answer()
 
@@ -200,11 +216,15 @@ async def process_back_to_categories(callback_query: types.CallbackQuery):
 async def process_back_to_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    await bot.edit_message_text(
-        chat_id=callback_query.message.chat.id,
-        message_id=callback_query.message.message_id,
-        text="📃 Категория: 🔥Фишинг Ссылка🔥\n📃 Описание:",
-        reply_markup=get_phishing_category_keyboard(user_id)
+    text = (
+        "<b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
+        "<b>Описание:</b> 05:10"
+    )
+    
+    await delete_and_send_new(
+        callback_query,
+        text,
+        get_phishing_category_keyboard(user_id)
     )
     await callback_query.answer()
 
@@ -216,21 +236,22 @@ async def process_buy_phishing(callback_query: types.CallbackQuery):
 # Обработчик кнопки "Наличие товара"
 @dp.message_handler(lambda message: message.text == "📦 Наличие товара")
 async def stock_info(message: types.Message):
-    await message.answer(
+    await delete_and_send_new(
+        message,
         "📊 <b>Наличие товара:</b>\n\n"
         "✅ Фишинг-ссылки - В наличии (50+)\n"
         "✅ Email шаблоны - В наличии (30+)\n"
         "✅ Веб-страницы - В наличии (20+)\n"
         "⚠️ Мобильные версии - Ограниченное количество\n"
         "✅ Банковские шаблоны - В наличии (15+)\n\n"
-        "Цены и детали уточняйте в ЛС.",
-        parse_mode='HTML'
+        "Цены и детали уточняйте в ЛС."
     )
 
 # Обработчик кнопки "О магазине"
 @dp.message_handler(lambda message: message.text == "🏪 О магазине")
 async def about_shop(message: types.Message):
-    await message.answer(
+    await delete_and_send_new(
+        message,
         "🏪 <b>О магазине FishingScamming:</b>\n\n"
         "Мы специализируемся на предоставлении материалов для:\n"
         "• Обучения кибербезопасности\n"
@@ -239,15 +260,15 @@ async def about_shop(message: types.Message):
         "⏳ Работаем с 2021 года\n"
         "👥 69 активных пользователей\n"
         "⭐ Высокое качество материалов\n"
-        "🔒 Конфиденциальность гарантирована",
-        parse_mode='HTML'
+        "🔒 Конфиденциальность гарантирована"
     )
 
 # Обработчик кнопки "Профиль"
 @dp.message_handler(lambda message: message.text == "👤 Профиль")
 async def profile_info(message: types.Message):
     user = message.from_user
-    await message.answer(
+    await delete_and_send_new(
+        message,
         f"👤 <b>Ваш профиль:</b>\n\n"
         f"🆔 ID: <code>{user.id}</code>\n"
         f"👤 Имя: {user.first_name}\n"
@@ -256,14 +277,14 @@ async def profile_info(message: types.Message):
         f"📊 Статистика:\n"
         f"• Зарегистрирован: Сегодня\n"
         f"• Заказов: 0\n"
-        f"• Баланс: 0 руб.",
-        parse_mode='HTML'
+        f"• Баланс: 0 руб."
     )
 
 # Обработчик кнопки "Правила"
 @dp.message_handler(lambda message: message.text == "📜 Правила")
 async def rules_info(message: types.Message):
-    await message.answer(
+    await delete_and_send_new(
+        message,
         "📜 <b>Правила использования:</b>\n\n"
         "1. Использовать материалы только в образовательных целях\n"
         "2. Не применять для мошенничества или незаконной деятельности\n"
@@ -271,14 +292,14 @@ async def rules_info(message: types.Message):
         "4. Оплата только через указанные способы\n"
         "5. Возврат средств - по договоренности\n"
         "6. Конфиденциальность данных - гарантирована\n\n"
-        "⚠️ Нарушение правил ведет к блокировке!",
-        parse_mode='HTML'
+        "⚠️ Нарушение правил ведет к блокировке!"
     )
 
 # Обработчик кнопки "Помощь"
 @dp.message_handler(lambda message: message.text == "🆘 Помощь")
 async def help_info(message: types.Message):
-    await message.answer(
+    await delete_and_send_new(
+        message,
         "🆘 <b>Помощь и поддержка:</b>\n\n"
         "📞 Техподдержка: @admin_username\n"
         "⏰ Время работы: 10:00-22:00 (МСК)\n"
@@ -287,14 +308,14 @@ async def help_info(message: types.Message):
         "• Как сделать заказ? - Напишите в ЛС\n"
         "• Способы оплаты? - Карта, крипта\n"
         "• Гарантии? - 100% качество\n"
-        "• Сроки? - Моментальная выдача",
-        parse_mode='HTML'
+        "• Сроки? - Моментальная выдача"
     )
 
 # Обработчик кнопки "сервис"
 @dp.message_handler(lambda message: message.text == "⚙️ сервис")
 async def service_info(message: types.Message):
-    await message.answer(
+    await delete_and_send_new(
+        message,
         "⚙️ <b>Наши услуги:</b>\n\n"
         "🎣 Создание фишинг-страниц\n"
         "🔐 Взлом аккаунтов (по запросу)\n"
@@ -302,16 +323,16 @@ async def service_info(message: types.Message):
         "🛡️ Консультации по безопасности\n"
         "💻 Настройка серверов\n"
         "📊 Анализ уязвимостей\n\n"
-        "Для заказа услуг пишите в ЛС.",
-        parse_mode='HTML'
+        "Для заказа услуг пишите в ЛС."
     )
 
 # Обработчик остальных сообщений
 @dp.message_handler()
 async def echo_message(message: types.Message):
-    await message.answer(
+    await delete_and_send_new(
+        message,
         "Я не понимаю ваш запрос. Используйте кнопки ниже для навигации 👇",
-        reply_markup=get_main_keyboard()
+        get_main_keyboard()
     )
 
 # Запуск бота
