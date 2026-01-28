@@ -1,4 +1,3 @@
-
 import logging
 import aiohttp
 from aiogram import Bot, Dispatcher, types
@@ -7,7 +6,7 @@ from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # --- НАСТРОЙКИ ---
-API_TOKEN = '8311250772:AAEywAtRQQrbsEQ4dg0qdRg3dBf0Mgi126k'
+API_TOKEN = '8311250772:AAF40iq3SqG77igp7d4uMwL2dSgSfLtWw54'
 CRYPTO_PAY_TOKEN = '523191:AAboyI61aKwD8GmdufeKXn1kdCfwPWyDh82'
 ADMIN_ID = 8524326478
 ITEM_PRICE = 500  # Цена за 1 шт.
@@ -252,4 +251,3 @@ async def handle_others(message: types.Message):
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
-
