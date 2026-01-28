@@ -1,3 +1,4 @@
+
 import logging
 import aiohttp
 from aiogram import Bot, Dispatcher, types
@@ -6,7 +7,7 @@ from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # --- НАСТРОЙКИ ---
-API_TOKEN = '8311250772:AAEG4WWfEFf3axJitF3xgPsVe7ozjMwwE2I'
+API_TOKEN = '8311250772:AAHwc5YPgngWyVFPdmSHL4wBRSb_ac13Gaw'
 CRYPTO_PAY_TOKEN = '523191:AAboyI61aKwD8GmdufeKXn1kdCfwPWyDh82'
 ADMIN_ID = 8524326478
 ITEM_PRICE = 500  # Цена за 1 шт.
