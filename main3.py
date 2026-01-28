@@ -7,7 +7,7 @@ from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # --- НАСТРОЙКИ ---
-API_TOKEN = '8311250772:AAHwc5YPgngWyVFPdmSHL4wBRSb_ac13Gaw'
+API_TOKEN = '8311250772:AAEywAtRQQrbsEQ4dg0qdRg3dBf0Mgi126k'
 CRYPTO_PAY_TOKEN = '523191:AAboyI61aKwD8GmdufeKXn1kdCfwPWyDh82'
 ADMIN_ID = 8524326478
 ITEM_PRICE = 500  # Цена за 1 шт.
