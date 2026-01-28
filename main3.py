@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
-API_TOKEN = '8311250772:AAFPKqPLh_kiAsTtwqoCG20xBAHuPeav2XM'
+API_TOKEN = '8311250772:AAENT4-wv0BCCurNgkNjpw79cpQHORJNGr8'
 ADMIN_ID = 8524326478
 
 # Настройка логирования
@@ -18,7 +18,7 @@ bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-# Хранилище для лайков пользователей (по умолчанию у всех белое сердечко)
+# Хранилище для лайков пользователей
 user_likes = {}
 
 # Создание главной клавиатуры
@@ -49,58 +49,72 @@ def get_categories_keyboard():
     )
     return keyboard
 
-# Клавиатура для категории Фишинг Ссылка (все кнопки вертикально, сердечко по центру)
+# Клавиатура для категории Фишинг Ссылка
 def get_phishing_category_keyboard(user_id):
-    # По умолчанию всегда белое сердечко, если пользователь еще не нажимал
-    heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup(row_width=1)
+    heart_state = "💚" if user_likes.get(user_id) == "liked_category" else "🤍"
+    keyboard = InlineKeyboardMarkup(row_width=3)
     
-    # Все кнопки вертикально
+    # 1. Первая кнопка (занимает всю ширину)
     keyboard.add(
         InlineKeyboardButton("25.01.26 обновление🔥 Фишинг Ссылка", callback_data="phishing_update")
     )
-    keyboard.add(
-        InlineKeyboardButton(heart_state, callback_data="toggle_like")  # сердечко по центру
+    
+    # 2. Вторая строка: Назад (слева), Сердечко (справа)
+    keyboard.row(
+        InlineKeyboardButton("Назад", callback_data="back_to_categories"),
+        InlineKeyboardButton("", callback_data="empty"),
+        InlineKeyboardButton(heart_state, callback_data="toggle_like_category")
     )
+    
+    # 3. Кнопка "Назад ко всем категориям" по центру внизу
     keyboard.add(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
     
     return keyboard
 
-# Клавиатура для товара обновление (как на втором скрине)
+# Клавиатура для товара обновление
 def get_phishing_update_keyboard(user_id):
-    # По умолчанию всегда белое сердечко, если пользователь еще не нажимал
-    heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup(row_width=2)
+    heart_state = "💚" if user_likes.get(user_id) == "liked_update" else "🤍"
+    keyboard = InlineKeyboardMarkup(row_width=3)
     
-    # Кнопки расположены как на втором скрине
-    # 1. Фишинг 500 по середине
+    # 1. Кнопка "Фишинг | 150 ₽ | ∞" по центру (занимает всю ширину)
     keyboard.add(
-        InlineKeyboardButton("Фишинг | 500 ₽ | ∞", callback_data="buy_phishing")
+        InlineKeyboardButton("Фишинг | 150 ₽ | ∞", callback_data="buy_phishing")
     )
-    # 2. Назад слева внизу, Сердечко справа снизу
+    
+    # 2. Вторая строка: Назад (слева), Сердечко (справа)
     keyboard.row(
         InlineKeyboardButton("Назад", callback_data="back_to_phishing_category"),
-        InlineKeyboardButton(heart_state, callback_data="toggle_like")
+        InlineKeyboardButton("", callback_data="empty"),
+        InlineKeyboardButton(heart_state, callback_data="toggle_like_update")
     )
-    # 3. Назад ко всем категориям по середине снизу
+    
+    # 3. Кнопка "Назад ко всем категориям" по центру внизу
     keyboard.add(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
     
     return keyboard
 
-# Функция для удаления предыдущего сообщения и отправки нового
-async def delete_and_send_new(message_or_callback, text, reply_markup=None, parse_mode='HTML'):
+# Функция для редактирования сообщения вместо удаления
+async def edit_or_send_new(message_or_callback, text, reply_markup=None, parse_mode='HTML'):
     if isinstance(message_or_callback, types.CallbackQuery):
-        chat_id = message_or_callback.message.chat.id
-        message_id = message_or_callback.message.message_id
         try:
-            await bot.delete_message(chat_id, message_id)
+            await message_or_callback.message.edit_text(
+                text, 
+                reply_markup=reply_markup, 
+                parse_mode=parse_mode
+            )
         except Exception as e:
-            logging.error(f"Ошибка удаления сообщения: {e}")
-        await bot.send_message(chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
+            # Если не удалось отредактировать, удаляем и отправляем новое
+            chat_id = message_or_callback.message.chat.id
+            message_id = message_or_callback.message.message_id
+            try:
+                await bot.delete_message(chat_id, message_id)
+            except:
+                pass
+            await bot.send_message(chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
     else:
         chat_id = message_or_callback.chat.id
         await message_or_callback.answer(text, reply_markup=reply_markup, parse_mode=parse_mode)
@@ -110,10 +124,6 @@ async def delete_and_send_new(message_or_callback, text, reply_markup=None, pars
 async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     username = message.from_user.username
-    
-    # Инициализируем состояние сердечка для нового пользователя (белое сердечко)
-    if user_id not in user_likes:
-        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
     
     # Отправляем эмодзи 🌟
     await message.answer("🌟")
@@ -142,28 +152,19 @@ async def send_welcome(message: types.Message):
 async def all_categories(message: types.Message):
     text = "Выберите категорию:"
     
-    await delete_and_send_new(
-        message,
-        text,
-        get_categories_keyboard()
-    )
+    await message.answer(text, reply_markup=get_categories_keyboard())
 
 # Обработчик нажатия на категорию Фишинг Ссылка
 @dp.callback_query_handler(lambda c: c.data == 'category_phishing')
 async def process_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    # Убедимся, что у пользователя есть состояние сердечка
-    if user_id not in user_likes:
-        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
-    
-    # Обновленный текст (убрано описание)
     text = (
         "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
         "📃 <b>Описание:</b>\n"
     )
     
-    await delete_and_send_new(
+    await edit_or_send_new(
         callback_query,
         text,
         get_phishing_category_keyboard(user_id)
@@ -175,10 +176,6 @@ async def process_phishing_category(callback_query: types.CallbackQuery):
 async def process_phishing_update(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    # Убедимся, что у пользователя есть состояние сердечка
-    if user_id not in user_likes:
-        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
-    
     text = (
         "📃 <b>Категория:</b> 25.01.26 обновление🔥 Фишинг Ссылка🔥\n"
         "📃 <b>Описание:</b> ⭐Моментальный взлом жир Аккаунтов ⭐\n\n"
@@ -186,69 +183,91 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
         "После оплаты Бот Автоматически выдаст ссылку..."
     )
     
-    await delete_and_send_new(
+    await edit_or_send_new(
         callback_query,
         text,
         get_phishing_update_keyboard(user_id)
     )
     await callback_query.answer()
 
-# Обработчик переключения лайка
-@dp.callback_query_handler(lambda c: c.data == 'toggle_like')
-async def process_toggle_like(callback_query: types.CallbackQuery):
+# Обработчик пустой кнопки (для выравнивания)
+@dp.callback_query_handler(lambda c: c.data == 'empty')
+async def process_empty_button(callback_query: types.CallbackQuery):
+    await callback_query.answer()
+
+# Обработчик переключения лайка для категории
+@dp.callback_query_handler(lambda c: c.data == 'toggle_like_category')
+async def process_toggle_like_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    # Убедимся, что у пользователя есть состояние сердечка
-    if user_id not in user_likes:
-        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
+    # Определяем текущее состояние и показываем соответствующее уведомление
+    current_state = user_likes.get(user_id)
+    if current_state == "liked_category":
+        # Удаляем из избранного
+        user_likes[user_id] = None
+        notification_text = "Категория удалена из избранного"
+    else:
+        # Добавляем в избранное
+        user_likes[user_id] = "liked_category"
+        notification_text = "Категория добавлена в избранное"
+    
+    # Показываем уведомление вверху экрана
+    await callback_query.answer(notification_text)
+    
+    # Обновляем сообщение с тем же текстом, но новым сердечком
+    text = (
+        "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
+        "📃 <b>Описание:</b>\n"
+    )
+    
+    await edit_or_send_new(
+        callback_query,
+        text,
+        get_phishing_category_keyboard(user_id)
+    )
+
+# Обработчик переключения лайка для товара
+@dp.callback_query_handler(lambda c: c.data == 'toggle_like_update')
+async def process_toggle_like_update(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
     
     # Определяем текущее состояние и показываем соответствующее уведомление
-    if user_likes.get(user_id) == "liked":
-        # Удаляем из избранного (меняем на белое сердечко)
-        user_likes[user_id] = "unliked"
+    current_state = user_likes.get(user_id)
+    if current_state == "liked_update":
+        # Удаляем из избранного
+        user_likes[user_id] = None
         notification_text = "Товар удалён из избранного"
     else:
-        # Добавляем в избранное (меняем на зеленое сердечко)
-        user_likes[user_id] = "liked"
+        # Добавляем в избранное
+        user_likes[user_id] = "liked_update"
         notification_text = "Товар добавлен в избранное"
     
     # Показываем уведомление вверху экрана
     await callback_query.answer(notification_text)
     
-    # Определяем, на каком экране находится пользователь
-    message_text = callback_query.message.text
+    # Обновляем сообщение с тем же текстом, но новым сердечком
+    text = (
+        "📃 <b>Категория:</b> 25.01.26 обновление🔥 Фишинг Ссылка🔥\n"
+        "📃 <b>Описание:</b> ⭐Моментальный взлом жир Аккаунтов ⭐\n\n"
+        "Для оплаты T Bank 2200702042193321    В сообщениях перевода прописать свой  ИД ТГ\n"
+        "После оплаты Бот Автоматически выдаст ссылку..."
+    )
     
-    if "📃 <b>Категория:</b> 25.01.26 обновление🔥 Фишинг Ссылка🔥" in message_text:
-        # На экране товара - обновляем сообщение с новым сердечком
-        await delete_and_send_new(
-            callback_query,
-            message_text,
-            get_phishing_update_keyboard(user_id)
-        )
-    elif "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥" in message_text:
-        # На экране категории - обновляем сообщение с новым сердечком
-        await delete_and_send_new(
-            callback_query,
-            message_text,
-            get_phishing_category_keyboard(user_id)
-        )
-    else:
-        # Если не нашли нужного текста, все равно обновляем с текущим текстом
-        await delete_and_send_new(
-            callback_query,
-            message_text,
-            get_phishing_category_keyboard(user_id)
-        )
+    await edit_or_send_new(
+        callback_query,
+        text,
+        get_phishing_update_keyboard(user_id)
+    )
 
 # Обработчик возврата к категориям
 @dp.callback_query_handler(lambda c: c.data == 'back_to_categories')
 async def process_back_to_categories(callback_query: types.CallbackQuery):
     text = "Выберите категорию:"
     
-    # Показываем уведомление "Загрузка…" (только здесь)
+    # Показываем уведомление "Загрузка…"
     await callback_query.answer("Загрузка…")
     
-    await delete_and_send_new(
+    await edit_or_send_new(
         callback_query,
         text,
         get_categories_keyboard()
@@ -259,17 +278,12 @@ async def process_back_to_categories(callback_query: types.CallbackQuery):
 async def process_back_to_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    # Убедимся, что у пользователя есть состояние сердечка
-    if user_id not in user_likes:
-        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
-    
-    # Обновленный текст (убрано описание)
     text = (
         "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
         "📃 <b>Описание:</b>\n"
     )
     
-    await delete_and_send_new(
+    await edit_or_send_new(
         callback_query,
         text,
         get_phishing_category_keyboard(user_id)
@@ -302,11 +316,7 @@ async def handle_other_buttons(message: types.Message):
 async def echo_message(message: types.Message):
     error_text = "К сожалению я не смог распознать Вашу команду. Воспользуйтесь кнопками в меню или отправьте /start"
     
-    await delete_and_send_new(
-        message,
-        error_text,
-        get_main_keyboard()
-    )
+    await message.answer(error_text, reply_markup=get_main_keyboard())
 
 # Запуск бота
 if __name__ == '__main__':
