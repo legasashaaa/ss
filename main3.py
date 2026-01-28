@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 # Настройки бота
-API_TOKEN = '8311250772:AAFPKqPLh_kiAsTtwqoCG20xBAHuPeav2XM'
+API_TOKEN = '8311250772:AAHe2EDytZPgl1iSYk5zmkgW-gBz_0o1NtA'
 ADMIN_ID = 8524326478
 
 # Настройка логирования
@@ -18,7 +18,7 @@ bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-# Хранилище для лайков пользователей
+# Хранилище для лайков пользователей (по умолчанию у всех белое сердечко)
 user_likes = {}
 
 # Создание главной клавиатуры
@@ -51,6 +51,7 @@ def get_categories_keyboard():
 
 # Клавиатура для категории Фишинг Ссылка (все кнопки вертикально, сердечко по центру)
 def get_phishing_category_keyboard(user_id):
+    # По умолчанию всегда белое сердечко, если пользователь еще не нажимал
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup(row_width=1)
     
@@ -69,6 +70,7 @@ def get_phishing_category_keyboard(user_id):
 
 # Клавиатура для товара обновление (как на втором скрине)
 def get_phishing_update_keyboard(user_id):
+    # По умолчанию всегда белое сердечко, если пользователь еще не нажимал
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
     keyboard = InlineKeyboardMarkup(row_width=2)
     
@@ -109,6 +111,10 @@ async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     username = message.from_user.username
     
+    # Инициализируем состояние сердечка для нового пользователя (белое сердечко)
+    if user_id not in user_likes:
+        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
+    
     # Отправляем эмодзи 🌟
     await message.answer("🌟")
     
@@ -147,6 +153,10 @@ async def all_categories(message: types.Message):
 async def process_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
+    # Убедимся, что у пользователя есть состояние сердечка
+    if user_id not in user_likes:
+        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
+    
     # Обновленный текст (убрано описание)
     text = (
         "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥\n"
@@ -164,6 +174,10 @@ async def process_phishing_category(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data == 'phishing_update')
 async def process_phishing_update(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
+    
+    # Убедимся, что у пользователя есть состояние сердечка
+    if user_id not in user_likes:
+        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
     
     text = (
         "📃 <b>Категория:</b> 25.01.26 обновление🔥 Фишинг Ссылка🔥\n"
@@ -184,31 +198,42 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
 async def process_toggle_like(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
-    # Определяем текущее состояние
+    # Убедимся, что у пользователя есть состояние сердечка
+    if user_id not in user_likes:
+        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
+    
+    # Определяем текущее состояние и показываем соответствующее уведомление
     if user_likes.get(user_id) == "liked":
-        # Удаляем из избранного
+        # Удаляем из избранного (меняем на белое сердечко)
         user_likes[user_id] = "unliked"
         notification_text = "Товар удалён из избранного"
     else:
-        # Добавляем в избранное
+        # Добавляем в избранное (меняем на зеленое сердечко)
         user_likes[user_id] = "liked"
         notification_text = "Товар добавлен в избранное"
     
-    # Показываем уведомление вверху экрана (без "Загрузка…")
+    # Показываем уведомление вверху экрана
     await callback_query.answer(notification_text)
     
     # Определяем, на каком экране находится пользователь
     message_text = callback_query.message.text
     
     if "📃 <b>Категория:</b> 25.01.26 обновление🔥 Фишинг Ссылка🔥" in message_text:
-        # На экране товара - используем ТОТ ЖЕ текст сообщения
+        # На экране товара - обновляем сообщение с новым сердечком
         await delete_and_send_new(
             callback_query,
             message_text,
             get_phishing_update_keyboard(user_id)
         )
     elif "📃 <b>Категория:</b> 🔥Фишинг Ссылка🔥" in message_text:
-        # На экране категории - используем ТОТ ЖЕ текст сообщения
+        # На экране категории - обновляем сообщение с новым сердечком
+        await delete_and_send_new(
+            callback_query,
+            message_text,
+            get_phishing_category_keyboard(user_id)
+        )
+    else:
+        # Если не нашли нужного текста, все равно обновляем с текущим текстом
         await delete_and_send_new(
             callback_query,
             message_text,
@@ -233,6 +258,10 @@ async def process_back_to_categories(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data == 'back_to_phishing_category')
 async def process_back_to_phishing_category(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
+    
+    # Убедимся, что у пользователя есть состояние сердечка
+    if user_id not in user_likes:
+        user_likes[user_id] = "unliked"  # По умолчанию белое сердечко
     
     # Обновленный текст (убрано описание)
     text = (
