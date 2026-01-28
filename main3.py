@@ -62,20 +62,27 @@ def get_phishing_category_keyboard(user_id):
     )
     return keyboard
 
-# Клавиатура для товара обновление
+# Клавиатура для товара обновление - ИЗМЕНЕН ПРИМЕР КАК НА ВТОРОМ СКРИНЕ
 def get_phishing_update_keyboard(user_id):
     heart_state = "💚" if user_likes.get(user_id) == "liked" else "🤍"
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    keyboard.add(
-        InlineKeyboardButton("Фишинг | 150 ₽", callback_data="buy_phishing")
+    keyboard = InlineKeyboardMarkup()
+    
+    # 1. Кнопка "Фишинг | 150 ₽ | ∞" (первая строка)
+    keyboard.row(
+        InlineKeyboardButton("Фишинг | 150 ₽ | ∞", callback_data="buy_phishing")
     )
-    keyboard.add(
+    
+    # 2. Вторая строка: лайк и "Назад" рядом
+    keyboard.row(
         InlineKeyboardButton(heart_state, callback_data="toggle_like"),
         InlineKeyboardButton("Назад", callback_data="back_to_phishing_category")
     )
-    keyboard.add(
+    
+    # 3. Третья строка: "Назад ко всем категориям" отдельно
+    keyboard.row(
         InlineKeyboardButton("Назад ко всем категориям", callback_data="back_to_categories")
     )
+    
     return keyboard
 
 # Обработчик команды /start
@@ -141,8 +148,8 @@ async def process_phishing_update(callback_query: types.CallbackQuery):
     
     text = (
         "Категория: 25.01.26 обновление\n"
-        "Фишинг Ссылка 🔥🔥\n"
-        "Описание: ★Моментальный взлом жир Аккаунтов ★\n\n"
+        "Фишинг Ссылка 🔥\n"
+        "Описание: ★ Моментальный взлом жир Аккаунтов ★\n\n"
         "Для оплаты T Bank\n"
         "2200702042193321 В сообщениях перевода прописать свой ИД ТГ\n"
         "После оплаты Бот Автоматически выдаст ссылку..."
